@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>MiniProject 01 – STA 9750 Submission Material</title>
+<title>MiniProject 01 - Netflix Data Analysis – STA 9750 Submission Material</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -125,7 +125,7 @@ window.Quarto = {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">MiniProject 01</h1>
+<h1 class="title">MiniProject 01 - Netflix Data Analysis</h1>
 </div>
 
 
@@ -142,6 +142,7 @@ window.Quarto = {
 </header>
 
 
+<p>We are currently working to analyze how films and TV series have performed on Netflix in the past four years. By taking a look at this data, we will see how Netflix is performing in both US market and the international market, which is important for its growth strategy. To conduct our analysis for Netflix, we are going to download 2 key datasets. The country dataset shows weekly Netflix rankings by country. The global dataset tracks global content performance with viewership and ranking metrics.</p>
 <p>if(!dir.exists(file.path(“data”, “mp01”))){ dir.create(file.path(“data”, “mp01”), showWarnings=FALSE, recursive=TRUE) }</p>
 <p>GLOBAL_TOP_10_FILENAME &lt;- file.path(“data”, “mp01”, “global_top10_alltime.csv”)</p>
 <p>if(!file.exists(GLOBAL_TOP_10_FILENAME)){ download.file(“https://www.netflix.com/tudum/top10/data/all-weeks-global.tsv”, destfile=GLOBAL_TOP_10_FILENAME) }</p>
@@ -150,56 +151,58 @@ window.Quarto = {
 <p>if(!require(“tidyverse”)) install.packages(“tidyverse”) library(readr) library(dplyr)</p>
 <p>GLOBAL_TOP_10 &lt;- read_tsv(GLOBAL_TOP_10_FILENAME)</p>
 <p>str(GLOBAL_TOP_10) glimpse(GLOBAL_TOP_10)</p>
-<p>#Task 2#</p>
+<p>#Task 1</p>
 <p>GLOBAL_TOP_10 &lt;- GLOBAL_TOP_10 |&gt; mutate(season_title = if_else(season_title == “N/A”, NA_character_, season_title)) glimpse(GLOBAL_TOP_10)</p>
-<p>#Task 3# if(!require(“readr”)) install.packages(“readr”) library(readr)</p>
+<p>#Task 2 if(!require(“readr”)) install.packages(“readr”) library(readr)</p>
 <p>COUNTRY_TOP_10 &lt;- read_tsv( COUNTRY_TOP_10_FILENAME, na = “N/A” )</p>
 <p>glimpse(COUNTRY_TOP_10)</p>
-<p>#Task 4# install.packages(“DT”) library(DT) GLOBAL_TOP_10 |&gt; head(n=20) |&gt; datatable(options=list(searching=FALSE, info=FALSE))</p>
+<p>#Task 3 install.packages(“DT”) library(DT) GLOBAL_TOP_10 |&gt; head(n=20) |&gt; datatable(options=list(searching=FALSE, info=FALSE))</p>
 <p>library(stringr) format_titles &lt;- function(df){ colnames(df) &lt;- str_replace_all(colnames(df), “_“,” “) |&gt; str_to_title() df }</p>
 <p>GLOBAL_TOP_10 |&gt; format_titles() |&gt; head(n=20) |&gt; datatable(options=list(searching=FALSE, info=FALSE)) |&gt; formatRound(c(‘Weekly Hours Viewed’, ‘Weekly Views’))</p>
 <p>GLOBAL_TOP_10 |&gt; select(-season_title) |&gt; format_titles() |&gt; head(n=20) |&gt; datatable(options=list(searching=FALSE, info=FALSE)) |&gt; formatRound(c(‘Weekly Hours Viewed’, ‘Weekly Views’))</p>
 <p>GLOBAL_TOP_10 |&gt; mutate(<code>runtime_(minutes)</code> = round(60 * runtime)) |&gt; select(-season_title, -runtime) |&gt; format_titles() |&gt; head(n=20) |&gt; datatable(options=list(searching=FALSE, info=FALSE)) |&gt; formatRound(c(‘Weekly Hours Viewed’, ‘Weekly Views’))</p>
-<p>#Question 1# library(dplyr)</p>
+<p>From the data above, we were able to see that in the week of September 21, 2025, the top 20 most viewed shows on Netflix were all films, highlighting how films are still popular with their consumers.</p>
+<p>#Task4</p>
+<p>#Question 1 library(dplyr)</p>
 <p>num_countries &lt;- COUNTRY_TOP_10 |&gt; distinct(country_name) |&gt; count() |&gt; pull(n)</p>
 <p>cat(“Netflix operates in”, num_countries, “different countries based on the viewing history data.”)</p>
-<p>#Question #2# library(dplyr)</p>
+<p>#Question 2 library(dplyr)</p>
 <p>non_english_top &lt;- GLOBAL_TOP_10 |&gt; filter(category == “Films (Non-English)”) |&gt; group_by(show_title) |&gt; summarise(max_weeks = max(cumulative_weeks_in_top_10, na.rm = TRUE),.groups = “drop”) |&gt; arrange(desc(max_weeks)) |&gt; slice(1)</p>
 <p>cat(“The non-English-language film that spent the most cumulative weeks in the global top 10 is”, non_english_top<span class="math inline">\(show_title, "with",
     non_english_top\)</span>max_weeks, “weeks.”)</p>
-<p>#Question #3#</p>
+<p>#Question 3</p>
 <p>longest_film &lt;- GLOBAL_TOP_10 |&gt; filter(grepl(“Films”, category)) |&gt; filter(!is.na(runtime)) |&gt; group_by(show_title) |&gt; summarise(max_runtime = max(runtime, na.rm = TRUE), .groups = “drop”) |&gt; arrange(desc(max_runtime)) |&gt; slice(1)</p>
 <p>runtime_minutes &lt;- round(longest_film$max_runtime * 60)</p>
 <p>cat(“The longest film to have ever appeared in the Netflix global Top 10 is”, longest_film$show_title, “with a runtime of”, runtime_minutes, “minutes.”)</p>
-<p>#Question 4# library(DT) library(dplyr) library(stringr)</p>
+<p>#Question 4 library(DT) library(dplyr) library(stringr)</p>
 <p>top_by_category &lt;- GLOBAL_TOP_10 %&gt;% group_by(category, show_title) %&gt;% summarise(total_hours = sum(weekly_hours_viewed, na.rm = TRUE), .groups = “drop”) %&gt;% group_by(category) %&gt;% slice_max(order_by = total_hours, n = 1) %&gt;% ungroup()</p>
 <p>top_by_category %&gt;% datatable(options = list(searching = FALSE, info = FALSE), caption = “Most Viewed Program Globally by Category (Total Hours)”)</p>
-<p>#Question 5# library(dplyr)</p>
+<p>#Question 5 library(dplyr)</p>
 <p>Longest_Run_TV_show &lt;- COUNTRY_TOP_10 |&gt; filter(!is.na(cumulative_weeks_in_top_10)) |&gt; filter(grepl(“TV”, category)) |&gt; arrange(desc(cumulative_weeks_in_top_10)) |&gt; slice(1)</p>
 <p>cat(“The TV show that had the longest run in a country’s Top 10 is”, Longest_Run_TV_show<span class="math inline">\(show_title, "with",
     Longest_Run_TV_show\)</span>cumulative_weeks_in_top_10, “weeks in”, Longest_Run_TV_show$country_name)</p>
-<p>#Question 6#</p>
+<p>#Question 6</p>
 <p>library(dplyr) library(lubridate)</p>
 <p>COUNTRY_TOP_10 &lt;- COUNTRY_TOP_10 |&gt; mutate(week = parse_date_time(week, orders = c(“ymd”, “mdy”, “dmy”)))</p>
 <p>country_weeks &lt;- COUNTRY_TOP_10 |&gt; group_by(country_name) |&gt; summarise(num_weeks = n_distinct(week), last_week = max(week, na.rm = TRUE), .groups = “drop”) |&gt; filter(num_weeks &lt; 200)</p>
 <p>if(nrow(country_weeks) &gt; 0){ cat(“The country with fewer than 200 weeks of Netflix data is”, country_weeks<span class="math inline">\(country_name,
   "and Netflix ceased operations there in", year(country_weeks\)</span>last_week))} else { cat(“All countries have 200 or more weeks of Netflix data.”)}</p>
-<p>#Question 7# library(dplyr)</p>
+<p>#Question 7 library(dplyr)</p>
 <p>squid_game_total &lt;- GLOBAL_TOP_10 |&gt; filter(show_title == “Squid Game”) |&gt; summarise( total_hours_viewed = sum(weekly_hours_viewed, na.rm = TRUE) )</p>
 <p>cat(“The total global viewership of Squid Game across all seasons is”, squid_game_total$total_hours_viewed, “hours”)</p>
-<p>#Question 8# library(dplyr) library(lubridate)</p>
+<p>#Question 8 library(dplyr) library(lubridate)</p>
 <p>red_notice_hours &lt;- GLOBAL_TOP_10 |&gt; filter(show_title == “Red Notice”, year(week) == 2021) |&gt; summarise( total_hours_viewed = sum(weekly_hours_viewed, na.rm = TRUE), .groups = “drop”)</p>
 <p>runtime_hours &lt;- 1 + 58/60</p>
 <p>red_notice_views &lt;- red_notice_hours$total_hours_viewed / runtime_hours</p>
 <p>cat(“Red Notice had approximately”, round(red_notice_views, 0),“views in 2021.”)</p>
-<p>#Question 9# library(dplyr)</p>
+<p>#Question 9 library(dplyr)</p>
 <p>us_films &lt;- COUNTRY_TOP_10 |&gt; filter(country_name == “United States”, grepl(“Films”, category))</p>
 <p>film_debuts &lt;- us_films |&gt; group_by(show_title) |&gt; filter(week == min(week)) |&gt; summarise( debut_week = min(week), debut_rank = min(weekly_rank), .groups = “drop”)</p>
 <p>films_with_num1 &lt;- us_films |&gt; filter(weekly_rank == 1) |&gt; group_by(show_title) |&gt; summarise( first_num1_week = min(week), .groups = “drop”)</p>
 <p>climbers &lt;- film_debuts |&gt; inner_join(films_with_num1, by = “show_title”) |&gt; filter(debut_rank &gt; 1)</p>
 <p>most_recent &lt;- climbers |&gt; arrange(desc(first_num1_week)) |&gt; slice(1)</p>
 <p>cat(“Number of films that reached #1 after debuting lower:”,nrow(climbers),“”) cat(“The most recent film to do this was”,most_recent$show_title, “”)</p>
-<p>#Question 10# library(tidyverse) library(DT) library(stringr)</p>
+<p>#Question 10 library(tidyverse) library(DT) library(stringr)</p>
 <p>COUNTRY_TOP_10 &lt;- COUNTRY_TOP_10 %&gt;% mutate(show_season = if_else(is.na(season_title), show_title, paste(show_title, season_title, sep = ” - “)))</p>
 <p>top_countries &lt;- COUNTRY_TOP_10 %&gt;% group_by(show_season, country_name) %&gt;% summarise(debut_week = min(week), .groups = “drop”) %&gt;% group_by(show_season) %&gt;% summarise(countries_charted = n_distinct(country_name), .groups = “drop”) %&gt;% slice_max(order_by = countries_charted, n = 1) %&gt;% ungroup() %&gt;% as.data.frame()</p>
 <p>datatable( top_countries, colnames = c(“TV Show/Season”, “Countries Charted”), caption = “TV Show/Season That Hit Top 10 in the Most Countries During Debut Week”) %&gt;% formatRound(‘countries_charted’, 0)</p>
@@ -210,32 +213,40 @@ window.Quarto = {
 <p>stranger_country &lt;- COUNTRY_TOP_10 %&gt;% mutate(show_season = if_else(is.na(season_title), show_title, paste(show_title, season_title, sep = ” - “))) %&gt;% filter(show_title ==”Stranger Things”) %&gt;% group_by(show_season) %&gt;% summarise( countries_charted = n_distinct(country_name), .groups = “drop”)</p>
 <p>stranger_summary &lt;- stranger_global %&gt;% mutate(show_season = if_else(is.na(season_title), show_title, paste(show_title, season_title, sep = ” - “))) %&gt;% left_join(stranger_country, by =”show_season”) %&gt;% select(show_title, season_title, total_hours_viewed, total_weeks_in_top10, countries_charted)</p>
 <p>datatable( stranger_summary, colnames = c(“Show Title”,“Season”,“Total Hours Viewed”,“Weeks in Top 10”,“Countries Charted”), caption = “Stranger Things: Global Impact Across Seasons”) %&gt;% formatRound(‘total_hours_viewed’, 0)</p>
-<p>Netflix Announces the Fifth and Final Season of Stranger Things!</p>
-<p>Today, Netflix announces that the highly anticipated fifth and final season of Stranger Things will debut at the end of 2025. Ahead of this major news, the streaming giant highlighted the global impact of the series’s first four seasons, which redefined genre television and became one of Netflix’s greatest success stories.</p>
-<p>In its first four seasons, Stranger Things has amassed over 2.9 billion total hours viewed, spending a combined 50 weeks in the Global Top 10, and charting in over 90 countries worldwide. These metrics show that the show can resonate across a wide range of audiences worldwide. Each season has seen greater success, resulting in the fourth season of Stranger Things generating an astounding 1.89 billion hours viewed and holding a place in the Global Top 10 for 19 weeks across 93 countries.</p>
-<p>By comparison, Black Mirror, another Netflix original series, accumulated 331.6 million hours viewed across 10 weeks in the Top 10, charting in over 90 countries.</p>
+<p>##Netflix Announces the Fifth and Final Season of Stranger Things!</p>
+<p>Today, Netflix announces that the highly anticipated fifth and final season of Stranger Things will debut at the end of 2025. Ahead of this major news, the streaming giant highlighted the global impact of the series’s first four seasons, which redefined streaming and became one of Netflix’s greatest success stories.</p>
+<p>In its first four seasons, Stranger Things has amassed over <strong>2.9 billion total hours viewed, spending a combined 50 weeks in the Global Top 10, and charting in over 90 countries worldwide</strong>. These metrics show that the show can resonate across a wide range of audiences worldwide. Each season has seen greater success, resulting in the fourth season of Stranger Things generating an astounding <strong>1.89 billion hours viewed and holding a place in the Global Top 10 for 19 weeks across 93 countries.</strong></p>
+<p>By comparison, Black Mirror, another Netflix original series, accumulated <strong>331.6 million hours viewed across 10 weeks in the Top 10, charting in over 90 countries.</strong></p>
 <p>These figures emphasize that Stranger Things is not only a national hit but also a global phenomenon. Its sustained popularity, record-breaking total viewership, and broad reach surpass many other English-language shows, solidifying its status as one of the most influential series of the streaming era. With the fifth and final season slated for release at the end of 2025, Stranger Things continues to define Netflix’s global success in the streaming business.</p>
-<p>#Black Mirror Data#</p>
+<p>Black Mirror Data</p>
 <p>library(tidyverse) library(DT) library(stringr)</p>
 <p>blackmirror_global &lt;- GLOBAL_TOP_10 %&gt;% filter(show_title == “Black Mirror”) %&gt;% group_by(show_title, season_title) %&gt;% summarise( total_hours_viewed = sum(weekly_hours_viewed, na.rm = TRUE), total_weeks_in_top10 = n_distinct(week), .groups = “drop”)</p>
 <p>blackmirror_country &lt;- COUNTRY_TOP_10 %&gt;% mutate(show_season = if_else(is.na(season_title), show_title, paste(show_title, season_title, sep = ” - “))) %&gt;% filter(show_title ==”Black Mirror”) %&gt;% group_by(show_season) %&gt;% summarise( countries_charted = n_distinct(country_name), .groups = “drop”)</p>
 <p>blackmirror_summary &lt;- blackmirror_global %&gt;% mutate(show_season = if_else(is.na(season_title), show_title, paste(show_title, season_title, sep = ” - “))) %&gt;% left_join(blackmirror_country, by =”show_season”) %&gt;% select(show_title, season_title, total_hours_viewed,total_weeks_in_top10, countries_charted)</p>
 <p>datatable( blackmirror_summary, colnames = c(“Show Title”,“Season”,“Total Hours Viewed”,“Weeks in Top 10”,“Countries Charted”), caption = “Black Mirror: Global Impact Across Seasons”) %&gt;% formatRound(‘total_hours_viewed’, 0)</p>
-<p>#Task 6# library(tidyverse) library(DT) library(stringr)</p>
+<p>#Task 6 library(tidyverse) library(DT) library(stringr)</p>
 <p>india_top &lt;- COUNTRY_TOP_10 %&gt;% filter(country_name == “India”) %&gt;% group_by(show_title) %&gt;% summarise( weeks_in_top10_india = n_distinct(week), .groups = “drop”)</p>
 <p>us_top &lt;- COUNTRY_TOP_10 %&gt;% filter(country_name == “United States”) %&gt;% group_by(show_title) %&gt;% summarise(appeared_us = TRUE, .groups = “drop”)</p>
 <p>indian_exclusive &lt;- india_top %&gt;% left_join(us_top, by = “show_title”) %&gt;% filter(is.na(appeared_us)) %&gt;% arrange(desc(weeks_in_top10_india))</p>
 <p>datatable( indian_exclusive, colnames = c(“Show Title”, “Weeks in Top 10 (India)”), caption = “Popular Shows in India That Did Not Chart in the US”)</p>
-<p>Netflix Announces Massive Subscriber Growth in India!</p>
+<p>##Netflix Announces Massive Subscriber Growth in India!</p>
 <p>In recent years, Netflix has seen massive growth in subscribers outside the United States. As growth in the United States has stagnated, Netflix looked to expand internationally and focused heavily on India, given that it is home to over 20% of the world’s population.</p>
-<p>Netflix spent hundreds of millions of dollars on both original content as well as acquiring Hindi shows. Several Indian titles achieved great runs on the platform as seen with The Great Indian Kapil Show, which has secured an impressive 44 weeks in the Top 10, cementing its position as a fan favorite. Other standout titles include: • The Railway Men – The Untold Story Of Bhopal 1984 (30 weeks) • Khakee: The Bihar Chapter (29 weeks) • Maamla Legal Hai (26 weeks) • Haseen Dillruba (21 weeks) • Rana Naidu (20 weeks)</p>
+<p>Netflix spent hundreds of millions of dollars on both original content as well as acquiring Hindi shows. Several Indian titles achieved great runs on the platform as seen with The Great Indian Kapil Show, which has secured an <strong>impressive 44 weeks in the Top 10</strong>, cementing its position as a fan favorite.</p>
+<p><strong><em>Other standout titles include:</em></strong></p>
+<ol start="2" type="1">
+<li>The Railway Men – The Untold Story Of Bhopal 1984 (30 weeks)</li>
+<li>Khakee: The Bihar Chapter (29 weeks)</li>
+<li>Maamla Legal Hai (26 weeks)</li>
+<li>Haseen Dillruba (21 weeks)</li>
+<li>Rana Naidu (20 weeks)</li>
+</ol>
 <p>These rankings reflect how Indian shows resonate with local audiences. As Netflix India continues to invest in diverse, high-quality stories, fans can look forward to more titles that showcase the Indian culture and talent</p>
 <p>#Task 7#</p>
 <p>library(dplyr) library(DT)</p>
 <p>film_comparison_2025 &lt;- GLOBAL_TOP_10 %&gt;% filter(year(week) == 2025, grepl(“Films”, category)) %&gt;% group_by(category) %&gt;% summarise( total_hours_viewed = sum(weekly_hours_viewed, na.rm = TRUE), total_weeks_in_top10 = n_distinct(week), number_of_titles = n_distinct(show_title), .groups = “drop”)</p>
 <p>film_comparison_2025 %&gt;% datatable( colnames = c(“Language Type”, “Total Hours Viewed”, “Total Weeks in Top 10”, “Number of Titles”), caption = “Comparison of English vs Non-English Films on Netflix (2025)”) %&gt;% formatRound(c(“total_hours_viewed”, “total_weeks_in_top10”), 0)</p>
-<p>Netflix Data Reveals Increasing Popularity of Non-English Films</p>
-<p>Netflix’s latest viewership analysis highlights the continuing rise of international content on the platform. So far in 2025, English-language films amassed 5,062,300,000 total hours viewed and spent over 38 weeks in the Top 10, covering 185 distinct titles. In comparison, though non-English films generated just over half the total hours viewed, it spent equal number of weeks in the Top 10 as English films.</p>
+<p>#Netflix Data Reveals Increasing Popularity of Non-English Films</p>
+<p>Netflix’s latest viewership analysis highlights the continuing rise of international content on the platform. So far in 2025, English-language films amassed <strong>5,062,300,000 total hours viewed</strong> and spent over <strong>38 weeks in the Top 10</strong>, covering <strong>185 distinct titles</strong>. In comparison, though non-English films generated just over half the total hours viewed, it spent equal number of weeks in the Top 10 as English films.</p>
 <p>This comparison shows that Netflix can deliver content across languages and regions. While English films continue to draw the largest cumulative audience, the robust viewership of non-English films shows the increasing global appetite for diverse and international content.</p>
 <p>International films have become a key part of the platform’s long-term growth strategy, and the platform’s international content library is helping expand engagement beyond traditional English-speaking markets, while also offering subscribers access to culturally relevant stories. These insights reinforce Netflix’s mission to provide a global entertainment experience that can successfully expand outside its traditional US market.</p>
 
