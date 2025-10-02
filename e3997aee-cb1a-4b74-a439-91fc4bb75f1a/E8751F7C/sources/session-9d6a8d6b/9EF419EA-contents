@@ -1,0 +1,35 @@
+---
+title: "Masaya Koga Website"
+format:
+  html:
+    theme: lumen
+---
+
+As an Operations Manager at Ryan Transactional Risk, I specialize in optimizing processes to drive efficiency and performance.
+
+With a background as a Data Operations Associate at CB Insights and experience in sales at Tempus, I bring a versatile skill set focused on streamlining operations and delivering meaningful results.
+
+You can learn more about me on my [LinkedIn profile](https://www.linkedin.com/in/masayakoga/).
+
+You can also [view or download my resume](Masaya Koga - Resume.pdf).
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+
+if(!require("leaflet")){
+    options(repos=c(CRAN="https://cloud.r-project.org"))
+    install.packages("leaflet")
+    stopifnot(require("leaflet"))
+}
+
+baruch_longitude <- -73.98333
+baruch_latitude  <- +40.75028
+
+leaflet() |>
+  addTiles() |>
+  setView(baruch_longitude, baruch_latitude, zoom=17) |>
+  addPopups(baruch_longitude, baruch_latitude, 
+            "I am a Master's student at <b>Baruch College</b>!")
+```

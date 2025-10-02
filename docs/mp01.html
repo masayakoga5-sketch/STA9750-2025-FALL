@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.6.42">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>MiniProject 01 – STA 9750 Submission Material</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<script src="site_libs/quarto-html/quarto.js"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-2f5df379a58b258e96c21c0638c20c03.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap-31a69106845bb5235818fe7426cf0c4d.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+</head>
+
+<body class="nav-fixed fullcontent">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="./index.html">
+    <span class="navbar-title">STA 9750 Submission Material</span>
+    </a>
+  </div>
+        <div class="quarto-navbar-tools tools-end">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">MiniProject 01</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p>if(!dir.exists(file.path(“data”, “mp01”))){ dir.create(file.path(“data”, “mp01”), showWarnings=FALSE, recursive=TRUE) }</p>
+<p>GLOBAL_TOP_10_FILENAME &lt;- file.path(“data”, “mp01”, “global_top10_alltime.csv”)</p>
+<p>if(!file.exists(GLOBAL_TOP_10_FILENAME)){ download.file(“https://www.netflix.com/tudum/top10/data/all-weeks-global.tsv”, destfile=GLOBAL_TOP_10_FILENAME) }</p>
+<p>COUNTRY_TOP_10_FILENAME &lt;- file.path(“data”, “mp01”, “country_top10_alltime.csv”)</p>
+<p>if(!file.exists(COUNTRY_TOP_10_FILENAME)){ download.file(“https://www.netflix.com/tudum/top10/data/all-weeks-countries.tsv”, destfile=COUNTRY_TOP_10_FILENAME) }</p>
+<p>if(!require(“tidyverse”)) install.packages(“tidyverse”) library(readr) library(dplyr)</p>
+<p>GLOBAL_TOP_10 &lt;- read_tsv(GLOBAL_TOP_10_FILENAME)</p>
+<p>str(GLOBAL_TOP_10) glimpse(GLOBAL_TOP_10)</p>
+<p>#Task 2#</p>
+<p>GLOBAL_TOP_10 &lt;- GLOBAL_TOP_10 |&gt; mutate(season_title = if_else(season_title == “N/A”, NA_character_, season_title)) glimpse(GLOBAL_TOP_10)</p>
+<p>#Task 3# if(!require(“readr”)) install.packages(“readr”) library(readr)</p>
+<p>COUNTRY_TOP_10 &lt;- read_tsv( COUNTRY_TOP_10_FILENAME, na = “N/A” )</p>
+<p>glimpse(COUNTRY_TOP_10)</p>
+<p>#Task 4# install.packages(“DT”) library(DT) GLOBAL_TOP_10 |&gt; head(n=20) |&gt; datatable(options=list(searching=FALSE, info=FALSE))</p>
+<p>library(stringr) format_titles &lt;- function(df){ colnames(df) &lt;- str_replace_all(colnames(df), “_“,” “) |&gt; str_to_title() df }</p>
+<p>GLOBAL_TOP_10 |&gt; format_titles() |&gt; head(n=20) |&gt; datatable(options=list(searching=FALSE, info=FALSE)) |&gt; formatRound(c(‘Weekly Hours Viewed’, ‘Weekly Views’))</p>
+<p>GLOBAL_TOP_10 |&gt; select(-season_title) |&gt; format_titles() |&gt; head(n=20) |&gt; datatable(options=list(searching=FALSE, info=FALSE)) |&gt; formatRound(c(‘Weekly Hours Viewed’, ‘Weekly Views’))</p>
+<p>GLOBAL_TOP_10 |&gt; mutate(<code>runtime_(minutes)</code> = round(60 * runtime)) |&gt; select(-season_title, -runtime) |&gt; format_titles() |&gt; head(n=20) |&gt; datatable(options=list(searching=FALSE, info=FALSE)) |&gt; formatRound(c(‘Weekly Hours Viewed’, ‘Weekly Views’))</p>
+<p>#Question 1# library(dplyr)</p>
+<p>num_countries &lt;- COUNTRY_TOP_10 |&gt; distinct(country_name) |&gt; count() |&gt; pull(n)</p>
+<p>cat(“Netflix operates in”, num_countries, “different countries based on the viewing history data.”)</p>
+<p>#Question #2# library(dplyr)</p>
+<p>non_english_top &lt;- GLOBAL_TOP_10 |&gt; filter(category == “Films (Non-English)”) |&gt; group_by(show_title) |&gt; summarise(max_weeks = max(cumulative_weeks_in_top_10, na.rm = TRUE),.groups = “drop”) |&gt; arrange(desc(max_weeks)) |&gt; slice(1)</p>
+<p>cat(“The non-English-language film that spent the most cumulative weeks in the global top 10 is”, non_english_top<span class="math inline">\(show_title, "with",
+    non_english_top\)</span>max_weeks, “weeks.”)</p>
+<p>#Question #3#</p>
+<p>longest_film &lt;- GLOBAL_TOP_10 |&gt; filter(grepl(“Films”, category)) |&gt; filter(!is.na(runtime)) |&gt; group_by(show_title) |&gt; summarise(max_runtime = max(runtime, na.rm = TRUE), .groups = “drop”) |&gt; arrange(desc(max_runtime)) |&gt; slice(1)</p>
+<p>runtime_minutes &lt;- round(longest_film$max_runtime * 60)</p>
+<p>cat(“The longest film to have ever appeared in the Netflix global Top 10 is”, longest_film$show_title, “with a runtime of”, runtime_minutes, “minutes.”)</p>
+<p>#Question 4# library(DT) library(dplyr) library(stringr)</p>
+<p>top_by_category &lt;- GLOBAL_TOP_10 %&gt;% group_by(category, show_title) %&gt;% summarise(total_hours = sum(weekly_hours_viewed, na.rm = TRUE), .groups = “drop”) %&gt;% group_by(category) %&gt;% slice_max(order_by = total_hours, n = 1) %&gt;% ungroup()</p>
+<p>top_by_category %&gt;% datatable(options = list(searching = FALSE, info = FALSE), caption = “Most Viewed Program Globally by Category (Total Hours)”)</p>
+<p>#Question 5# library(dplyr)</p>
+<p>Longest_Run_TV_show &lt;- COUNTRY_TOP_10 |&gt; filter(!is.na(cumulative_weeks_in_top_10)) |&gt; filter(grepl(“TV”, category)) |&gt; arrange(desc(cumulative_weeks_in_top_10)) |&gt; slice(1)</p>
+<p>cat(“The TV show that had the longest run in a country’s Top 10 is”, Longest_Run_TV_show<span class="math inline">\(show_title, "with",
+    Longest_Run_TV_show\)</span>cumulative_weeks_in_top_10, “weeks in”, Longest_Run_TV_show$country_name)</p>
+<p>#Question 6#</p>
+<p>library(dplyr) library(lubridate)</p>
+<p>COUNTRY_TOP_10 &lt;- COUNTRY_TOP_10 |&gt; mutate(week = parse_date_time(week, orders = c(“ymd”, “mdy”, “dmy”)))</p>
+<p>country_weeks &lt;- COUNTRY_TOP_10 |&gt; group_by(country_name) |&gt; summarise(num_weeks = n_distinct(week), last_week = max(week, na.rm = TRUE), .groups = “drop”) |&gt; filter(num_weeks &lt; 200)</p>
+<p>if(nrow(country_weeks) &gt; 0){ cat(“The country with fewer than 200 weeks of Netflix data is”, country_weeks<span class="math inline">\(country_name,
+  "and Netflix ceased operations there in", year(country_weeks\)</span>last_week))} else { cat(“All countries have 200 or more weeks of Netflix data.”)}</p>
+<p>#Question 7# library(dplyr)</p>
+<p>squid_game_total &lt;- GLOBAL_TOP_10 |&gt; filter(show_title == “Squid Game”) |&gt; summarise( total_hours_viewed = sum(weekly_hours_viewed, na.rm = TRUE) )</p>
+<p>cat(“The total global viewership of Squid Game across all seasons is”, squid_game_total$total_hours_viewed, “hours”)</p>
+<p>#Question 8# library(dplyr) library(lubridate)</p>
+<p>red_notice_hours &lt;- GLOBAL_TOP_10 |&gt; filter(show_title == “Red Notice”, year(week) == 2021) |&gt; summarise( total_hours_viewed = sum(weekly_hours_viewed, na.rm = TRUE), .groups = “drop”)</p>
+<p>runtime_hours &lt;- 1 + 58/60</p>
+<p>red_notice_views &lt;- red_notice_hours$total_hours_viewed / runtime_hours</p>
+<p>cat(“Red Notice had approximately”, round(red_notice_views, 0),“views in 2021.”)</p>
+<p>#Question 9# library(dplyr)</p>
+<p>us_films &lt;- COUNTRY_TOP_10 |&gt; filter(country_name == “United States”, grepl(“Films”, category))</p>
+<p>film_debuts &lt;- us_films |&gt; group_by(show_title) |&gt; filter(week == min(week)) |&gt; summarise( debut_week = min(week), debut_rank = min(weekly_rank), .groups = “drop”)</p>
+<p>films_with_num1 &lt;- us_films |&gt; filter(weekly_rank == 1) |&gt; group_by(show_title) |&gt; summarise( first_num1_week = min(week), .groups = “drop”)</p>
+<p>climbers &lt;- film_debuts |&gt; inner_join(films_with_num1, by = “show_title”) |&gt; filter(debut_rank &gt; 1)</p>
+<p>most_recent &lt;- climbers |&gt; arrange(desc(first_num1_week)) |&gt; slice(1)</p>
+<p>cat(“Number of films that reached #1 after debuting lower:”,nrow(climbers),“”) cat(“The most recent film to do this was”,most_recent$show_title, “”)</p>
+<p>#Question 10# library(tidyverse) library(DT) library(stringr)</p>
+<p>COUNTRY_TOP_10 &lt;- COUNTRY_TOP_10 %&gt;% mutate(show_season = if_else(is.na(season_title), show_title, paste(show_title, season_title, sep = ” - “)))</p>
+<p>top_countries &lt;- COUNTRY_TOP_10 %&gt;% group_by(show_season, country_name) %&gt;% summarise(debut_week = min(week), .groups = “drop”) %&gt;% group_by(show_season) %&gt;% summarise(countries_charted = n_distinct(country_name), .groups = “drop”) %&gt;% slice_max(order_by = countries_charted, n = 1) %&gt;% ungroup() %&gt;% as.data.frame()</p>
+<p>datatable( top_countries, colnames = c(“TV Show/Season”, “Countries Charted”), caption = “TV Show/Season That Hit Top 10 in the Most Countries During Debut Week”) %&gt;% formatRound(‘countries_charted’, 0)</p>
+<section id="task-5" class="level1">
+<h1>Task 5</h1>
+<p>library(tidyverse) library(DT) library(stringr)</p>
+<p>stranger_global &lt;- GLOBAL_TOP_10 %&gt;% filter(show_title == “Stranger Things”) %&gt;% group_by(show_title, season_title) %&gt;% summarise( total_hours_viewed = sum(weekly_hours_viewed, na.rm = TRUE), total_weeks_in_top10 = n_distinct(week), .groups = “drop”)</p>
+<p>stranger_country &lt;- COUNTRY_TOP_10 %&gt;% mutate(show_season = if_else(is.na(season_title), show_title, paste(show_title, season_title, sep = ” - “))) %&gt;% filter(show_title ==”Stranger Things”) %&gt;% group_by(show_season) %&gt;% summarise( countries_charted = n_distinct(country_name), .groups = “drop”)</p>
+<p>stranger_summary &lt;- stranger_global %&gt;% mutate(show_season = if_else(is.na(season_title), show_title, paste(show_title, season_title, sep = ” - “))) %&gt;% left_join(stranger_country, by =”show_season”) %&gt;% select(show_title, season_title, total_hours_viewed, total_weeks_in_top10, countries_charted)</p>
+<p>datatable( stranger_summary, colnames = c(“Show Title”,“Season”,“Total Hours Viewed”,“Weeks in Top 10”,“Countries Charted”), caption = “Stranger Things: Global Impact Across Seasons”) %&gt;% formatRound(‘total_hours_viewed’, 0)</p>
+<p>Netflix Announces the Fifth and Final Season of Stranger Things!</p>
+<p>Today, Netflix announces that the highly anticipated fifth and final season of Stranger Things will debut at the end of 2025. Ahead of this major news, the streaming giant highlighted the global impact of the series’s first four seasons, which redefined genre television and became one of Netflix’s greatest success stories.</p>
+<p>In its first four seasons, Stranger Things has amassed over 2.9 billion total hours viewed, spending a combined 50 weeks in the Global Top 10, and charting in over 90 countries worldwide. These metrics show that the show can resonate across a wide range of audiences worldwide. Each season has seen greater success, resulting in the fourth season of Stranger Things generating an astounding 1.89 billion hours viewed and holding a place in the Global Top 10 for 19 weeks across 93 countries.</p>
+<p>By comparison, Black Mirror, another Netflix original series, accumulated 331.6 million hours viewed across 10 weeks in the Top 10, charting in over 90 countries.</p>
+<p>These figures emphasize that Stranger Things is not only a national hit but also a global phenomenon. Its sustained popularity, record-breaking total viewership, and broad reach surpass many other English-language shows, solidifying its status as one of the most influential series of the streaming era. With the fifth and final season slated for release at the end of 2025, Stranger Things continues to define Netflix’s global success in the streaming business.</p>
+<p>#Black Mirror Data#</p>
+<p>library(tidyverse) library(DT) library(stringr)</p>
+<p>blackmirror_global &lt;- GLOBAL_TOP_10 %&gt;% filter(show_title == “Black Mirror”) %&gt;% group_by(show_title, season_title) %&gt;% summarise( total_hours_viewed = sum(weekly_hours_viewed, na.rm = TRUE), total_weeks_in_top10 = n_distinct(week), .groups = “drop”)</p>
+<p>blackmirror_country &lt;- COUNTRY_TOP_10 %&gt;% mutate(show_season = if_else(is.na(season_title), show_title, paste(show_title, season_title, sep = ” - “))) %&gt;% filter(show_title ==”Black Mirror”) %&gt;% group_by(show_season) %&gt;% summarise( countries_charted = n_distinct(country_name), .groups = “drop”)</p>
+<p>blackmirror_summary &lt;- blackmirror_global %&gt;% mutate(show_season = if_else(is.na(season_title), show_title, paste(show_title, season_title, sep = ” - “))) %&gt;% left_join(blackmirror_country, by =”show_season”) %&gt;% select(show_title, season_title, total_hours_viewed,total_weeks_in_top10, countries_charted)</p>
+<p>datatable( blackmirror_summary, colnames = c(“Show Title”,“Season”,“Total Hours Viewed”,“Weeks in Top 10”,“Countries Charted”), caption = “Black Mirror: Global Impact Across Seasons”) %&gt;% formatRound(‘total_hours_viewed’, 0)</p>
+<p>#Task 6# library(tidyverse) library(DT) library(stringr)</p>
+<p>india_top &lt;- COUNTRY_TOP_10 %&gt;% filter(country_name == “India”) %&gt;% group_by(show_title) %&gt;% summarise( weeks_in_top10_india = n_distinct(week), .groups = “drop”)</p>
+<p>us_top &lt;- COUNTRY_TOP_10 %&gt;% filter(country_name == “United States”) %&gt;% group_by(show_title) %&gt;% summarise(appeared_us = TRUE, .groups = “drop”)</p>
+<p>indian_exclusive &lt;- india_top %&gt;% left_join(us_top, by = “show_title”) %&gt;% filter(is.na(appeared_us)) %&gt;% arrange(desc(weeks_in_top10_india))</p>
+<p>datatable( indian_exclusive, colnames = c(“Show Title”, “Weeks in Top 10 (India)”), caption = “Popular Shows in India That Did Not Chart in the US”)</p>
+<p>Netflix Announces Massive Subscriber Growth in India!</p>
+<p>In recent years, Netflix has seen massive growth in subscribers outside the United States. As growth in the United States has stagnated, Netflix looked to expand internationally and focused heavily on India, given that it is home to over 20% of the world’s population.</p>
+<p>Netflix spent hundreds of millions of dollars on both original content as well as acquiring Hindi shows. Several Indian titles achieved great runs on the platform as seen with The Great Indian Kapil Show, which has secured an impressive 44 weeks in the Top 10, cementing its position as a fan favorite. Other standout titles include: • The Railway Men – The Untold Story Of Bhopal 1984 (30 weeks) • Khakee: The Bihar Chapter (29 weeks) • Maamla Legal Hai (26 weeks) • Haseen Dillruba (21 weeks) • Rana Naidu (20 weeks)</p>
+<p>These rankings reflect how Indian shows resonate with local audiences. As Netflix India continues to invest in diverse, high-quality stories, fans can look forward to more titles that showcase the Indian culture and talent</p>
+<p>#Task 7#</p>
+<p>library(dplyr) library(DT)</p>
+<p>film_comparison_2025 &lt;- GLOBAL_TOP_10 %&gt;% filter(year(week) == 2025, grepl(“Films”, category)) %&gt;% group_by(category) %&gt;% summarise( total_hours_viewed = sum(weekly_hours_viewed, na.rm = TRUE), total_weeks_in_top10 = n_distinct(week), number_of_titles = n_distinct(show_title), .groups = “drop”)</p>
+<p>film_comparison_2025 %&gt;% datatable( colnames = c(“Language Type”, “Total Hours Viewed”, “Total Weeks in Top 10”, “Number of Titles”), caption = “Comparison of English vs Non-English Films on Netflix (2025)”) %&gt;% formatRound(c(“total_hours_viewed”, “total_weeks_in_top10”), 0)</p>
+<p>Netflix Data Reveals Increasing Popularity of Non-English Films</p>
+<p>Netflix’s latest viewership analysis highlights the continuing rise of international content on the platform. So far in 2025, English-language films amassed 5,062,300,000 total hours viewed and spent over 38 weeks in the Top 10, covering 185 distinct titles. In comparison, though non-English films generated just over half the total hours viewed, it spent equal number of weeks in the Top 10 as English films.</p>
+<p>This comparison shows that Netflix can deliver content across languages and regions. While English films continue to draw the largest cumulative audience, the robust viewership of non-English films shows the increasing global appetite for diverse and international content.</p>
+<p>International films have become a key part of the platform’s long-term growth strategy, and the platform’s international content library is helping expand engagement beyond traditional English-speaking markets, while also offering subscribers access to culturally relevant stories. These insights reinforce Netflix’s mission to provide a global entertainment experience that can successfully expand outside its traditional US market.</p>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp("https:\/\/<masayakoga5-sketch>\.github\.io\/STA9750-2025-FALL\/");
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
