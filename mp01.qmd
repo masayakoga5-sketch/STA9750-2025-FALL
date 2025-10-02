@@ -3,7 +3,6 @@ title: "MiniProject 01 - Netflix Data Analysis"
 format:
   html:
     theme: lumen
-    self-contained: true
     output-dir: docs
 ---
 
