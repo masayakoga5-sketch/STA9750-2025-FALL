@@ -1,7 +1,14 @@
 ---
-title: "Mini Project 1"
-author: "Masaya Koga"
+title: "MiniProject 01 - Netflix Data Analysis"
+format:
+  html:
+    theme: lumen
+    output-dir: docs
 ---
+
+We are currently working to analyze how films and TV series have performed on Netflix in the past four years. By taking a look at this data, we will see how Netflix is performing in both US market and the international market, which is important for its growth strategy. To conduct our analysis for Netflix, we are going to download 2 key datasets. The country dataset shows weekly Netflix rankings by country. The global dataset tracks global content performance with viewership and ranking metrics.
+
+```{r}
 
 if(!dir.exists(file.path("data", "mp01"))){
   dir.create(file.path("data", "mp01"), showWarnings=FALSE, recursive=TRUE)
@@ -29,14 +36,21 @@ GLOBAL_TOP_10 <- read_tsv(GLOBAL_TOP_10_FILENAME)
 
 str(GLOBAL_TOP_10)
 glimpse(GLOBAL_TOP_10)
+```
 
-#Task 2#
+
+**Task 1**
+
+```{r}
 
 GLOBAL_TOP_10 <- GLOBAL_TOP_10 |>
   mutate(season_title = if_else(season_title == "N/A", NA_character_, season_title))
 glimpse(GLOBAL_TOP_10)
+```
 
-#Task 3#
+**Task 2**
+
+```{r}
 if(!require("readr")) install.packages("readr")
 library(readr)
 
@@ -46,9 +60,12 @@ COUNTRY_TOP_10 <- read_tsv(
 )
 
 glimpse(COUNTRY_TOP_10)
+```
 
-#Task 4#
-install.packages("DT")
+
+**Task 3**
+
+```{r}
 library(DT)
 GLOBAL_TOP_10 |> 
   head(n=20) |>
@@ -74,15 +91,22 @@ GLOBAL_TOP_10 |>
   formatRound(c('Weekly Hours Viewed', 'Weekly Views'))
 
 GLOBAL_TOP_10 |> 
-  mutate(`runtime_(minutes)` = round(60 * runtime)) |>
-  select(-season_title, 
-         -runtime) |>
+  mutate(`Runtime (Minutes)` = round(60 * runtime)) |>  # use proper column name here
+  select(-season_title, -runtime) |>
   format_titles() |>
   head(n=20) |>
   datatable(options=list(searching=FALSE, info=FALSE)) |>
-  formatRound(c('Weekly Hours Viewed', 'Weekly Views'))
+  formatRound(c('Weekly Hours Viewed', 'Weekly Views', 'Runtime (Minutes)'))
+```
 
-#Question 1#
+
+From the data above, we were able to see that in the week of September 21, 2025, the top 20 most viewed shows on Netflix were all films, highlighting how films are still popular with their consumers.
+
+**Task 4**
+
+*Question 1*
+
+```{r}
 library(dplyr)
 
 num_countries <- COUNTRY_TOP_10 |> 
@@ -91,8 +115,12 @@ num_countries <- COUNTRY_TOP_10 |>
   pull(n)
 
 cat("Netflix operates in", num_countries, "different countries based on the viewing history data.")
+```
 
-#Question #2#
+
+*Question 2*
+
+```{r}
 library(dplyr)
 
 non_english_top <- GLOBAL_TOP_10 |> 
@@ -105,9 +133,12 @@ non_english_top <- GLOBAL_TOP_10 |>
 cat("The non-English-language film that spent the most cumulative weeks in the global top 10 is",
     non_english_top$show_title, "with",
     non_english_top$max_weeks, "weeks.")
+```
 
-#Question #3#
 
+*Question 3*
+
+```{r}
 longest_film <- GLOBAL_TOP_10 |> 
   filter(grepl("Films", category)) |>
   filter(!is.na(runtime)) |> 
@@ -121,8 +152,12 @@ runtime_minutes <- round(longest_film$max_runtime * 60)
 cat("The longest film to have ever appeared in the Netflix global Top 10 is",
     longest_film$show_title, "with a runtime of",
     runtime_minutes, "minutes.")
+```
 
-#Question 4#
+
+*Question 4*
+
+```{r}
 library(DT)
 library(dplyr)
 library(stringr)
@@ -136,9 +171,12 @@ top_by_category <- GLOBAL_TOP_10 %>%
 
 top_by_category %>% datatable(options = list(searching = FALSE, info = FALSE), 
 caption = "Most Viewed Program Globally by Category (Total Hours)")
+```
 
 
-#Question 5#
+*Question 5*
+
+```{r}
 library(dplyr)
 
 Longest_Run_TV_show <- COUNTRY_TOP_10 |>
@@ -151,9 +189,12 @@ cat("The TV show that had the longest run in a country’s Top 10 is",
     Longest_Run_TV_show$show_title, "with",
     Longest_Run_TV_show$cumulative_weeks_in_top_10, "weeks in",
     Longest_Run_TV_show$country_name)
+```
 
-#Question 6#
 
+*Question 6*
+
+```{r}
 library(dplyr)
 library(lubridate)
 
@@ -171,8 +212,12 @@ if(nrow(country_weeks) > 0){
   cat("The country with fewer than 200 weeks of Netflix data is", country_weeks$country_name,
   "and Netflix ceased operations there in", year(country_weeks$last_week))} else {
   cat("All countries have 200 or more weeks of Netflix data.")}
+```
 
-#Question 7#
+
+*Question 7*
+
+```{r}
 library(dplyr)
 
 squid_game_total <- GLOBAL_TOP_10 |>
@@ -183,8 +228,12 @@ squid_game_total <- GLOBAL_TOP_10 |>
 
 cat("The total global viewership of Squid Game across all seasons is",
     squid_game_total$total_hours_viewed, "hours")
+```
 
-#Question 8#
+
+*Question 8*
+
+```{r}
 library(dplyr)
 library(lubridate)
 
@@ -200,8 +249,12 @@ runtime_hours <- 1 + 58/60
 red_notice_views <- red_notice_hours$total_hours_viewed / runtime_hours
 
 cat("Red Notice had approximately", round(red_notice_views, 0),"views in 2021.")
+```
 
-#Question 9#
+
+*Question 9*
+
+```{r}
 library(dplyr)
 
 us_films <- COUNTRY_TOP_10 |>
@@ -233,8 +286,12 @@ most_recent <- climbers |>
 
 cat("Number of films that reached #1 after debuting lower:",nrow(climbers),"\n")
 cat("The most recent film to do this was",most_recent$show_title, "\n")
+```
 
-#Question 10#
+
+*Question 10*
+
+```{r}
 library(tidyverse)
 library(DT)
 library(stringr)
@@ -257,8 +314,15 @@ datatable(
   colnames = c("TV Show/Season", "Countries Charted"),
   caption = "TV Show/Season That Hit Top 10 in the Most Countries During Debut Week") %>%
   formatRound('countries_charted', 0)
+```
 
-# Task 5 #
+**Task 5**
+
+**Netflix Announces the Fifth and Final Season of Stranger Things!**
+
+Today, Netflix announces that the highly anticipated fifth and final season of Stranger Things will debut at the end of 2025. Ahead of this major news, the streaming giant highlighted the global impact of the series's first four seasons, which redefined streaming and became one of Netflix’s greatest success stories.
+
+```{r}
 
 library(tidyverse)
 library(DT)
@@ -288,25 +352,18 @@ stranger_summary <- stranger_global %>%
   select(show_title, season_title, total_hours_viewed,
   total_weeks_in_top10, countries_charted)
 
+
 datatable(
   stranger_summary,
   colnames = c("Show Title","Season","Total Hours Viewed","Weeks in Top 10","Countries Charted"),
   caption = "Stranger Things: Global Impact Across Seasons") %>%
   formatRound('total_hours_viewed', 0)
-
-Netflix Announces the Fifth and Final Season of Stranger Things!
-
-Today, Netflix announces that the highly anticipated fifth and final season of Stranger Things will debut at the end of 2025. Ahead of this major news, the streaming giant highlighted the global impact of the series's first four seasons, which redefined genre television and became one of Netflix’s greatest success stories.
-
-In its first four seasons, Stranger Things has amassed over 2.9 billion total hours viewed, spending a combined 50 weeks in the Global Top 10, and charting in over 90 countries worldwide. These metrics show that the show can resonate across a wide range of audiences worldwide. Each season has seen greater success, resulting in the fourth season of Stranger Things generating an astounding 1.89 billion hours viewed and holding a place in the Global Top 10 for 19 weeks across 93 countries.
-
-By comparison, Black Mirror, another Netflix original series, accumulated 331.6 million hours viewed across 10 weeks in the Top 10, charting in over 90 countries.
-
-These figures emphasize that Stranger Things is not only a national hit but also a global phenomenon. Its sustained popularity, record-breaking total viewership, and broad reach surpass many other English-language shows, solidifying its status as one of the most influential series of the streaming era. With the fifth and final season slated for release at the end of 2025, Stranger Things continues to define Netflix’s global success in the streaming business.
+```
 
 
-#Black Mirror Data#
+In its first four seasons, Stranger Things has amassed over *2.9 billion total hours viewed, spending a combined 50 weeks in the Global Top 10, and charting in over 90 countries worldwide*. These metrics show that the show can resonate across a wide range of audiences worldwide. Each season has seen greater success, resulting in the fourth season of Stranger Things generating an astounding *1.89 billion hours viewed and holding a place in the Global Top 10 for 19 weeks across 93 countries.*
 
+```{r}
 library(tidyverse)
 library(DT)
 library(stringr)
@@ -339,9 +396,23 @@ datatable(
   colnames = c("Show Title","Season","Total Hours Viewed","Weeks in Top 10","Countries Charted"),
   caption = "Black Mirror: Global Impact Across Seasons") %>%
   formatRound('total_hours_viewed', 0)
-  
+```
 
-#Task 6#
+By comparison, Black Mirror, another Netflix original series, accumulated *331.6 million hours viewed across 10 weeks in the Top 10, charting in over 90 countries.*
+
+These figures emphasize that Stranger Things is not only a national hit but also a global phenomenon. Its sustained popularity, record-breaking total viewership, and broad reach surpass many other English-language shows, solidifying its status as one of the most influential series of the streaming era. With the fifth and final season slated for release at the end of 2025, Stranger Things continues to define Netflix’s global success in the streaming business.
+
+**Task 6**
+
+**Netflix Announces Massive Subscriber Growth in India!**
+
+In recent years, Netflix has seen massive growth in subscribers outside the United States. As growth in the United States has stagnated, Netflix looked to expand internationally and focused heavily on India, given that it is home to over 20% of the world’s population.
+
+Netflix spent hundreds of millions of dollars on both original content as well as acquiring Hindi shows. Several Indian titles achieved great runs on the platform as seen with The Great Indian Kapil Show, which has secured an *impressive 44 weeks in the Top 10*, cementing its position as a fan favorite.
+
+***Other standout titles include:***
+
+```{r}
 library(tidyverse)
 library(DT)
 library(stringr)
@@ -350,8 +421,9 @@ india_top <- COUNTRY_TOP_10 %>%
   filter(country_name == "India") %>%
   group_by(show_title) %>%
   summarise(
-  weeks_in_top10_india = n_distinct(week),
-  .groups = "drop")
+    weeks_in_top10_india = n_distinct(week),
+    .groups = "drop"
+  )
 
 us_top <- COUNTRY_TOP_10 %>%
   filter(country_name == "United States") %>%
@@ -361,30 +433,26 @@ us_top <- COUNTRY_TOP_10 %>%
 indian_exclusive <- india_top %>%
   left_join(us_top, by = "show_title") %>%
   filter(is.na(appeared_us)) %>%
-  arrange(desc(weeks_in_top10_india))
+  arrange(desc(weeks_in_top10_india)) %>%
+  slice(-1)
 
 datatable(
   indian_exclusive,
   colnames = c("Show Title", "Weeks in Top 10 (India)"),
-  caption = "Popular Shows in India That Did Not Chart in the US")
-
-Netflix Announces Massive Subscriber Growth in India!
-
-In recent years, Netflix has seen massive growth in subscribers outside the United States. As growth in the United States has stagnated, Netflix looked to expand internationally and focused heavily on India, given that it is home to over 20% of the world’s population.
-
-Netflix spent hundreds of millions of dollars on both original content as well as acquiring Hindi shows. Several Indian titles achieved great runs on the platform as seen with The Great Indian Kapil Show, which has secured an impressive 44 weeks in the Top 10, cementing its position as a fan favorite.
-Other standout titles include:
-•	The Railway Men – The Untold Story Of Bhopal 1984 (30 weeks)
-•	Khakee: The Bihar Chapter (29 weeks)
-•	Maamla Legal Hai (26 weeks)
-•	Haseen Dillruba (21 weeks)
-•	Rana Naidu (20 weeks)
+  caption = "Popular Shows in India That Did Not Chart in the US"
+)
+```
 
 These rankings reflect how Indian shows resonate with local audiences. As Netflix India continues to invest in diverse, high-quality stories, fans can look forward to more titles that showcase the Indian culture and talent
 
 
-#Task 7#
+**Task 7**
 
+**Netflix Data Reveals Increasing Popularity of Non-English Films**
+
+Netflix’s latest viewership analysis highlights the continuing rise of international content on the platform. As seen below,so far in 2025, English-language films amassed *5,062,300,000 total hours viewed* and spent over *38 weeks in the Top 10*, covering *185 distinct titles*. In comparison, though non-English films generated just over half the total hours viewed, it spent equal number of weeks in the Top 10 as English films.
+
+```{r}
 library(dplyr)
 library(DT)
 
@@ -401,11 +469,8 @@ film_comparison_2025 %>%
   datatable(
     colnames = c("Language Type", "Total Hours Viewed", "Total Weeks in Top 10", "Number of Titles"),
     caption = "Comparison of English vs Non-English Films on Netflix (2025)") %>%
-  formatRound(c("total_hours_viewed", "total_weeks_in_top10"), 0)
-
-Netflix Data Reveals Increasing Popularity of Non-English Films
-
-Netflix’s latest viewership analysis highlights the continuing rise of international content on the platform. So far in 2025, English-language films amassed 5,062,300,000 total hours viewed and spent over 38 weeks in the Top 10, covering 185 distinct titles. In comparison, though non-English films generated just over half the total hours viewed, it spent equal number of weeks in the Top 10 as English films.
+  formatRound(c("total_hours_viewed", "total_weeks_in_top10", "number_of_titles"), 0)
+```
 
 This comparison shows that Netflix can deliver content across languages and regions. While English films continue to draw the largest cumulative audience, the robust viewership of non-English films shows the increasing global appetite for diverse and international content.
 
