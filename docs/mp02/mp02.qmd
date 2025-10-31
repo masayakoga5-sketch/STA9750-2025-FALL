@@ -3,6 +3,10 @@ title: "Mini Project 2"
 author: "Masaya"
 format: html
 theme: lumen
+project:
+  type: website
+  output-dir: docs
+
 ---
 
 We are currently working to analyze housing affordability in the United States and use different metrics to see the trends that occured regaridng housing affordiability in this past 2 decades.
