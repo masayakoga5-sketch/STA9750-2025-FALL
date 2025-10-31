@@ -3,7 +3,7 @@ title: "MiniProject 01 - Netflix Data Analysis"
 format:
   html:
     theme: lumen
-    output-dir: docs
+    
 ---
 
 We are currently working to analyze how films and TV series have performed on Netflix in the past four years. By taking a look at this data, we will see how Netflix is performing in both US market and the international market, which is important for its growth strategy. To conduct our analysis for Netflix, we are going to download 2 key datasets. The country dataset shows weekly Netflix rankings by country. The global dataset tracks global content performance with viewership and ranking metrics.
