@@ -1,0 +1,302 @@
+---
+title: "Mini Project #3"
+author: "Masaya Koga"
+format: html
+---
+**Task 1**
+```{r}
+library(sf)
+library(dplyr)
+library(ggplot2)
+
+download_city_council <- function() {
+  dest_dir <- "data/mp03"
+  if (!dir.exists(dest_dir)) dir.create(dest_dir, recursive = TRUE)
+  
+  zip_url <- "https://s-media.nyc.gov/agencies/dcp/assets/files/zip/data-tools/bytes/city-council/nyccwi_25c.zip"
+  zip_path <- file.path(dest_dir, basename(zip_url))
+  
+  if (!file.exists(zip_path)) {
+    download.file(zip_url, destfile = zip_path, mode = "wb")
+  }
+  
+  shp_dir <- file.path(dest_dir, tools::file_path_sans_ext(basename(zip_url)))
+  if (!dir.exists(shp_dir) || length(list.files(shp_dir, pattern = "\\.shp$", recursive = TRUE)) == 0) {
+    unzip(zip_path, exdir = shp_dir)
+  }
+  
+  shp_file <- list.files(shp_dir, pattern = "\\.shp$", full.names = TRUE, recursive = TRUE)[1]
+  districts <- st_read(shp_file, quiet = TRUE)
+  
+  districts <- st_transform(districts, crs = 4326)
+  
+  return(districts)
+}
+
+# Run Task 1
+districts <- download_city_council()
+print(districts)
+```
+
+**Task 2**
+```{r}
+download_nyc_trees <- function() {
+  dest_dir <- "data/trees"
+  if (!dir.exists(dest_dir)) dir.create(dest_dir, recursive = TRUE)
+  file_path <- file.path(dest_dir, "nyc_trees.geojson")
+  
+  if (!file.exists(file_path)) {
+    download.file(
+      url = "https://data.cityofnewyork.us/resource/hn5i-inap.geojson?$limit=1000000",
+      destfile = file_path,
+      mode = "wb"
+    )
+  }
+  
+  tree_points <- st_read(file_path, quiet = TRUE)
+  
+  tree_points_clean <- tree_points %>%
+    filter(st_geometry_type(geometry) == "POINT")
+  
+  return(tree_points_clean)
+}
+
+tree_points_clean <- download_nyc_trees()
+
+tree_points_clean <- st_transform(tree_points_clean, st_crs(districts))
+
+```
+
+
+**Task 3**
+
+```{r}
+library(ggplot2)
+library(sf)
+
+tree_points_clean <- st_transform(tree_points_clean, st_crs(districts))
+
+ggplot() +
+  geom_sf(data = districts, fill = NA, color = "black", linewidth = 0.4) +
+  geom_sf(data = tree_points_clean, color = "darkgreen", alpha = 0.25, size = 0.15) +
+  labs(
+    title = "NYC Street Trees Over City Council Districts",
+    x = "Longitude",
+    y = "Latitude"
+  ) +
+  theme_minimal()
+```
+**Task 4**
+
+**Question 1**
+```{r}
+library(dplyr)
+library(sf)
+
+trees_districts <- st_join(tree_points_clean, districts, join = st_within)
+
+most_trees <- trees_districts %>%
+  st_drop_geometry() %>%
+  group_by(CounDist) %>%
+  summarise(tree_count = n()) %>%
+  arrange(desc(tree_count))
+
+top_district <- most_trees[1, ]
+cat("The Council district with the most trees is Council District", top_district$CounDist, 
+    "with", top_district$tree_count, "trees.\n")
+```
+
+**Question 2**
+```{r}
+library(dplyr)
+library(sf)
+
+trees_districts <- st_join(tree_points_clean, districts, join = st_within)
+
+tree_counts <- trees_districts %>%
+  st_drop_geometry() %>%
+  group_by(CounDist, Shape_Area) %>%
+  summarise(tree_count = n(), .groups = "drop")
+
+tree_counts <- tree_counts %>%
+  mutate(tree_density = tree_count / Shape_Area)
+
+highest_density <- tree_counts %>%
+  arrange(desc(tree_density)) %>%
+  slice(1)
+
+cat("Council district with the highest tree density is Council District", 
+    highest_density$CounDist, "with", (highest_density$tree_density), "trees per unit area.\n")
+```
+
+**Question 3**
+```{r}
+library(dplyr)
+library(sf)
+
+tree_points_clean <- st_transform(tree_points_clean, crs = st_crs(districts))
+
+trees_districts <- st_join(tree_points_clean, districts, join = st_intersects)
+
+dead_percentage <- trees_districts %>%
+  st_drop_geometry() %>%
+  filter(!is.na(CounDist)) %>%
+  group_by(CounDist) %>%
+  summarise(
+    total_trees = n(),
+    dead_trees = sum(tpcondition == "Dead", na.rm = TRUE),
+    dead_percent = round((dead_trees / total_trees) * 100, 2),
+    .groups = "drop") %>%
+  arrange(desc(dead_percent))
+
+highest_dead <- dead_percentage %>% slice(1)
+
+cat("Council district with highest percentage of dead trees is Council District", 
+    highest_dead$CounDist, "with", highest_dead$dead_percent, "% of trees dead.\n")
+```
+
+**Question 4**
+```{r}
+library(dplyr)
+library(sf)
+
+tree_points_clean <- st_transform(tree_points_clean, crs = st_crs(districts))
+
+trees_districts <- st_join(tree_points_clean, districts, join = st_intersects)
+
+trees_districts <- trees_districts %>%
+  mutate(
+    borough = case_when(
+      CounDist >= 1 & CounDist <= 10  ~ "Manhattan",
+      CounDist >= 11 & CounDist <= 18 ~ "Bronx",
+      CounDist >= 19 & CounDist <= 32 ~ "Queens",
+      CounDist >= 33 & CounDist <= 48 ~ "Brooklyn",
+      CounDist >= 49 & CounDist <= 51 ~ "Staten Island",
+      TRUE ~ NA_character_))
+
+manhattan_species <- trees_districts %>%
+  st_drop_geometry() %>%
+  filter(borough == "Manhattan") %>%
+  group_by(genusspecies) %>%
+  summarise(count = n(), .groups = "drop") %>%
+  arrange(desc(count))
+
+most_common_manhattan <- manhattan_species %>% slice(1)
+
+cat("The most common tree species in Manhattan is:", 
+    most_common_manhattan$genusspecies)
+```
+
+**Question 5**
+```{r}
+library(dplyr)
+library(sf)
+
+baruch_point <- st_sfc(st_point(c(-73.9833, 40.7394)), crs = 4326)
+
+tree_points_clean <- st_transform(tree_points_clean, crs = st_crs(baruch_point))
+
+tree_with_distance <- tree_points_clean %>%
+  mutate(distance_to_baruch = st_distance(geometry, baruch_point))
+
+closest_tree <- tree_with_distance %>%
+  slice_min(distance_to_baruch, n = 1)
+
+cat("The species of the tree closest to Baruch College is:", closest_tree$genusspecies, "\n")
+```
+
+**Task 5**
+
+**YIMBY Policy Bill Policy Brief**
+
+I am proposing a project to increase the number of trees in District 26, which covers Astoria, Long Island City, and Sunnyside in Western Queens. The goal is to increase neighborhood greenery, improve environmental quality, and quality of life for its residents. More street trees will provide shade, reduce urban heat, and improve air quality while making streets more attractive for residents and visitors. As seen below, this is the current tree map of our district.
+
+```{r}
+library(sf)
+library(dplyr)
+library(ggplot2)
+
+district_26 <- districts %>% filter(CounDist == 26)
+
+trees_26 <- st_join(tree_points_clean, district_26, join = st_within) %>%
+  filter(!is.na(CounDist))
+
+set.seed(123)
+trees_26_sample <- trees_26 %>% slice_sample(n = min(5000, nrow(trees_26)))
+
+
+bbox_26 <- st_bbox(district_26)
+expand <- 0.05
+x_range <- bbox_26$xmax - bbox_26$xmin
+y_range <- bbox_26$ymax - bbox_26$ymin
+bbox_zoom <- c(
+  xmin = bbox_26$xmin - expand * x_range,
+  xmax = bbox_26$xmax + expand * x_range,
+  ymin = bbox_26$ymin - expand * y_range,
+  ymax = bbox_26$ymax + expand * y_range
+)
+
+ggplot() +
+  geom_sf(data = district_26, fill = NA, color = "red", linewidth = 1) +
+  geom_sf(data = trees_26_sample, color = "darkgreen", alpha = 0.7, size = 1) +
+  coord_sf(xlim = c(bbox_zoom["xmin"], bbox_zoom["xmax"]),
+           ylim = c(bbox_zoom["ymin"], bbox_zoom["ymax"])) +
+  labs(title = "Street Trees in NYC Council District 26",
+    subtitle = "Zoomed-in view: District 26",
+    x = "Longitude",
+    y = "Latitude") +theme_minimal()
+```
+
+```{r}
+library(dplyr)
+library(sf)
+
+tree_points_clean <- st_transform(tree_points_clean, st_crs(districts))
+
+district_26 <- districts %>% filter(CounDist == 26)
+
+trees_26 <- st_join(tree_points_clean, district_26, join = st_intersects) %>%
+  filter(!is.na(CounDist))
+
+total_trees_26 <- nrow(trees_26)
+
+# Print sentence
+cat("District 26 currently has a total of", total_trees_26, "street trees")
+```
+
+Though District 26 has a total of 13,769 trees, I plan to increase the number of trees in the neighborhood by 20% and aim to plant 2,700 trees in the next 2 years. As seen in the table below, popular neighborhoods outside of Manhattan relied on increased greenery to attract new residents and reinvigorate the local economy. 
+
+```{r}
+library(dplyr)
+library(sf)
+library(ggplot2)
+
+districts <- st_transform(districts, st_crs(tree_points_clean))
+tree_points_clean <- st_transform(tree_points_clean, st_crs(districts))
+
+districts_of_interest <- districts %>% 
+  filter(CounDist %in% c(26, 33, 6))
+
+trees_selected <- st_join(tree_points_clean, districts_of_interest, join = st_intersects) %>%
+  filter(!is.na(CounDist))
+
+alive_tree_counts <- trees_selected %>%
+  st_drop_geometry() %>%
+  group_by(CounDist) %>%
+  summarise(alive_trees = sum(tpcondition != "Dead", na.rm = TRUE),
+    .groups = "drop")
+
+print(alive_tree_counts)
+
+ggplot(alive_tree_counts, aes(x = factor(CounDist), y = alive_trees, fill = factor(CounDist))) +
+  geom_col(width = 0.6) +
+  geom_text(aes(label = alive_trees), vjust = -0.5, size = 5) +
+  labs(
+    title = "Alive Tree Counts in Selected NYC Districts",
+    subtitle = "Districts: 26 (Astoria), 33 (Greenpoint/Williamsburg), 6 (Upper East Side)",
+    x = "Council District",
+    y = "Alive Trees") +
+  theme_minimal() +
+  theme(legend.position = "none",text = element_text(size = 12))
+```
+For example, Williamsburg and Greenpoint (District 33) currently has roughly 25% more live trees than our district, highlighting the potential for improvement in District 26. Similarly, the Upper East Side (District 6) has a substantially higher concentration of trees, which shows how urban canopy coverage can enhance neighborhood quality. By investing in additional tree plantings, District 26 can improve both improve environmental quality and aesthetic appeal and foster long-term economic benefits.
