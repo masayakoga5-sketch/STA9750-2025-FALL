@@ -1,0 +1,514 @@
+---
+title: "Mini Project 4"
+author: "Masaya Koga"
+format: html
+theme: cosmo
+---
+
+**Task 1**
+
+```{r}
+# Load packages
+
+library(httr2)
+library(rvest)
+library(dplyr)
+library(tidyr)
+library(lubridate)
+library(stringr)
+library(DT)
+
+# Step 1: Send POST request to BLS
+
+url <- "https://data.bls.gov/pdq/SurveyOutputServlet"
+
+resp <- request(url) |>
+  req_method("POST") |>
+  req_body_form(
+    request_action                   = "get_data",
+    reformat                         = "true",
+    from_results_page                = "true",
+    from_year                        = "1979",
+    to_year                          = "2025",
+    `Go.x`                           = "2",
+    `Go.y`                           = "11",
+    initial_request                  = "false",
+    data_tool                        = "surveymost",
+    series_id                        = "CES0000000001",
+    original_annualAveragesRequested = "false"
+  ) |>
+  req_headers(
+    "User-Agent" = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+    "Referer" = "https://data.bls.gov/cgi-bin/surveymost"
+  ) |>
+  req_perform()
+
+# Step 2: Extract table
+html <- resp_body_html(resp)
+data_table <- html |> html_element("table.regular-data")
+
+if (!is.na(data_table)) {
+  tbl <- data_table |> html_table(fill = TRUE)
+} else {
+  stop("No data table found — check request parameters.")
+}
+
+# Step 3: Clean + reshape into tidy format
+colnames(tbl)[1] <- "Year"
+month_cols <- setdiff(colnames(tbl), c("Year", "Annual", "Avg"))
+
+df_long <- tbl |>
+  filter(grepl("^(19|20)\\d{2}$", Year)) |>
+  pivot_longer(cols = all_of(month_cols),
+               names_to = "Month", values_to = "level") |>
+  mutate(
+    level_num   = as.numeric(str_remove_all(level, ",|\\s|\\*|\\(P\\)|\\(R\\)")),
+    Month_abbr  = str_sub(Month, 1, 3),
+    Month_int   = match(Month_abbr, month.abb),
+    Year_int    = as.integer(Year),
+    date        = make_date(Year_int, Month_int, 1)
+  ) |>
+  select(date, level = level_num) |>
+  drop_na() |>
+  arrange(date)
+
+# Step 4: Datatable
+datatable(df_long, 
+          options = list(pageLength = 25),
+          caption = "Monthly CES Employment Level — Seasonally Adjusted (1979–2025)")
+```
+
+**Task 2**
+```{r}
+library(httr2)
+library(rvest)
+library(dplyr)
+library(lubridate)
+library(stringr)
+library(purrr)
+library(DT)
+
+url <- "https://www.bls.gov/web/empsit/cesnaicsrev.htm"
+
+page <- request(url) %>%
+  req_method("GET") %>%
+  req_headers(
+    "User-Agent" = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+    "Accept" = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+  ) %>%
+  req_perform() %>%
+  resp_body_html()
+
+# Extract all HTML tables
+tables <- html_elements(page,"table")
+dfs <- lapply(tables, \(x) suppressWarnings(
+  tryCatch(html_table(x, header=FALSE), error=function(e) NULL)
+))
+
+# Identify valid CES year tables
+valid_tables <- which(sapply(dfs, \(df)
+  any(suppressWarnings(!is.na(as.numeric(df[[2]]))))
+))
+
+# Function to extract JAN–DEC rows
+extract_block <- function(df){
+  df <- df %>% slice(1:12)
+  month <- match(substr(trimws(df[[1]]),1,3), month.abb)
+  year  <- suppressWarnings(as.numeric(df[[2]]))
+  
+  tibble(
+    date     = suppressWarnings(ymd(paste(year,month,1,sep="-"))),
+    original = suppressWarnings(as.numeric(df[[3]])),
+    final    = suppressWarnings(as.numeric(df[[5]])),
+    revision = final-original
+  )
+}
+
+# Build the CES revision dataset
+ces_revisions <- map_dfr(valid_tables, \(i) extract_block(dfs[[i]])) %>%
+  arrange(date) %>%
+  filter(date >= ymd("1979-01-01"), date <= ymd("2025-06-01"))
+
+# 5. Display as DATATABLE
+datatable(
+  ces_revisions,
+  options = list(
+    pageLength = 25
+  )
+)
+```
+
+**Task 3**
+
+**What and when were the largest revisions (positive and negative) in CES history?**
+```{r}
+library(dplyr)
+library(lubridate)
+library(ggplot2)
+
+# Join levels + revisions
+ces_full <- df_long %>%
+  left_join(ces_revisions, by = "date") %>%
+  filter(date >= ymd("1979-01-01"), date <= ymd("2025-06-01")) %>%
+  arrange(date)
+
+glimpse(ces_full)
+
+#Largest positive revisions#
+
+library(DT)
+library(dplyr)
+
+largest_positive <- ces_full %>%
+  filter(!is.na(revision)) %>%
+  slice_max(revision, n = 1, with_ties = FALSE) %>%
+  mutate(type = "Largest Positive Revision") %>%
+  relocate(type)   # moves label column to front
+
+datatable(
+  largest_positive,
+  options = list(pageLength = 5
+  )
+)
+```
+
+```{r}
+largest_negative <- ces_full %>%
+  filter(!is.na(revision)) %>%
+  slice_min(revision, n = 1, with_ties = FALSE) %>%
+  mutate(type = "Largest Negative Revision") %>%
+  relocate(type)   # move classification column to the front
+datatable(
+  largest_negative,
+  options = list(
+    pageLength = 5
+  )
+)
+```
+
+**What fraction of CES revisions are positive in each decade?**
+```{r}
+library(DT)
+
+ces_decade <- ces_full %>%
+  mutate(decade = (year(date) %/% 10) * 10)
+
+frac_pos_by_decade <- ces_decade %>%
+  group_by(decade) %>%
+  summarise(
+    number_of_months      = n(),
+    percentage_positive   = mean(revision > 0, na.rm = TRUE) * 100,  # % of months positive
+    .groups = "drop"
+  )
+
+datatable(
+  frac_pos_by_decade,
+  options=list(
+    pageLength=10
+  )
+)
+```
+
+**What fraction of CES revisions are negative in each decade?**
+```{r}
+library(dplyr)
+library(lubridate)
+library(DT)
+
+ces_decade <- ces_full %>%
+  mutate(decade = (year(date) %/% 10) * 10)
+
+frac_neg_by_decade <- ces_decade %>%
+  group_by(decade) %>%
+  summarise(
+    number_of_months    = n(),
+    percentage_negative = mean(revision < 0, na.rm = TRUE) * 100,
+    .groups = "drop"
+  )
+
+datatable(
+  frac_neg_by_decade,
+  caption = "Fraction of Negative CES Revisions by Decade",
+  options = list(pageLength = 10)
+)
+```
+
+**Average Monthly Change in Employment**
+```{r}
+avg_monthly_change <- ces_full %>%
+  mutate(change = level - lag(level)) %>%    # month-to-month growth
+  summarise(
+    avg_change = mean(change, na.rm = TRUE)
+  )
+
+avg_monthly_change
+```
+
+**Total Net Employment Growth per Year (1979–2025)**
+```{r}
+library(dplyr)
+library(lubridate)
+library(DT)
+
+employment_growth_by_year <- ces_full %>%
+  mutate(year = year(date)) %>%
+  group_by(year) %>%
+  summarise(
+    start_level = first(level),
+    end_level   = last(level),
+    net_growth  = end_level - start_level,   # growth within the year
+    .groups = "drop"
+  )
+
+datatable(
+  employment_growth_by_year,
+  options = list(
+    pageLength = 15
+  ),
+  caption = "Total Net Employment Growth by Year (1979–2025)"
+)
+```
+
+**Plot 1: CES Employment Level Over Time (Overall Trend)**
+```{r}
+library(ggplot2)
+
+ggplot(ces_full, aes(x = date, y = level)) +
+  geom_line(color = "blue", linewidth = 0.9) +
+  labs(
+    title = "U.S. Total Non-Farm Employment Level (1979–2025)",
+    x = "Year",
+    y = "Employment Level"
+  ) +
+  theme_minimal()
+```
+
+**Plot 2: Monthly CES Revisions Over Time (Accuracy Trend)**
+```{r}
+ggplot(ces_full, aes(x = date, y = revision)) +
+  geom_line(color = "red", linewidth = 0.8) +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  labs(
+    title = "Monthly CES Revisions (1979–2025)",
+    x = "Year",
+    y = "Revision (Final − Original Estimate)"
+  ) +
+  theme_minimal()
+```
+
+**Plot 3: Distribution of CES Revisions (How often revisions are small/large)**
+```{r}
+ggplot(ces_full, aes(x = revision)) +
+  geom_histogram(bins = 60, fill = "blue", color = "white") +
+  labs(
+    title = "Distribution of CES Revisions Since 1979",
+    x = "Revision Size (Jobs, Final − Original)",
+    y = "Count of Months"
+  ) +
+  theme_minimal()
+```
+
+**Plot 4: Original vs Final Employment Estimates Over Time**
+```{r}
+library(tidyr)
+
+ces_compare <- ces_full %>%
+  select(date, original, final) %>%
+  pivot_longer(cols = c(original, final),
+               names_to = "estimate_type",
+               values_to = "value")
+
+ggplot(ces_compare, aes(x = date, y = value, color = estimate_type)) +
+  geom_line(linewidth = 0.9) +
+  labs(
+    title = "Original vs Final CES Employment Estimates (1979–2025)",
+    x = "Year",
+    y = "Employment Level",
+    color = "Estimate Type"
+  ) +
+  scale_color_manual(values = c("original" = "red", "final" = "blue")) +
+  theme_minimal()
+```
+
+**Task 4**
+
+**Question 1: Has the fraction of negative revisions increased post-2000?**
+```{r}
+library(dplyr)
+library(lubridate)
+library(infer)
+
+ces_clean <- ces_full %>%
+  mutate(
+    year = year(date),
+    revision = as.numeric(revision),
+    change = level - lag(level),
+    pct_revision = (revision / original) * 100
+  ) %>%
+  
+  filter(!is.na(revision),
+         !is.na(change),
+         !is.na(pct_revision)) %>%
+  
+  mutate(
+    revision_negative = factor(ifelse(revision < 0, "neg", "pos"),
+                               levels = c("neg", "pos")),
+    
+    large_change = factor(ifelse(abs(change) > 150, "large", "small"),
+                          levels = c("small", "large")),
+    
+    large_revision = factor(ifelse(abs(pct_revision) > 1, "large", "small"),
+                            levels = c("small", "large")),
+    
+    post_2000 = factor(ifelse(year >= 2000, "post", "pre"),
+                       levels = c("pre", "post")),
+    
+    post_2020 = factor(ifelse(year >= 2020, "post", "pre"),
+                       levels = c("pre", "post"))
+  )
+
+t1 <- ces_clean %>%
+  prop_test(
+    response = revision_negative,
+    explanatory = post_2000,
+    order = c("post", "pre")
+  )
+t1
+```
+
+Yes, per this test we saw that the fraction of negative CES revisions increased after 2000. A two-sample proportion test comparing the pre-2000 and post-2000 periods produced a statistically significant result where the p value was 0.0386.
+
+**Question 2: Has the fraction of negative revisions increased post-2000?**
+```{r}
+t2 <- ces_clean %>%
+  prop_test(
+    response = large_revision,
+    explanatory = post_2020,
+    order = c("post", "pre")
+  )
+t2
+```
+No, there is no statistical evidence that large revisions became more or less common after 2020 as a two-sample proportion test produced a statistically significant result where the p value was 0.209.
+
+**Question 3: Is the average revision significantly different from zero?**
+```{r}
+t3 <- ces_clean %>%
+  t_test(response = revision, mu = 0)
+t3
+```
+
+We conducted a one-sample t-test to determine whether the average CES revision differs from zero. The result was statistically significant as the p value was 0.000287. The estimated average revision is +15.0 jobs, with a 95% confidence interval of (6.95, 23.1).
+
+**Question 4: Has the average revision increased post-2020?**
+```{r}
+t4 <- ces_clean %>%
+  t_test(
+    response = revision,
+    explanatory = post_2020,
+    order = c("post", "pre")
+  )
+t4
+```
+
+We compared the mean CES revision before and after 2020 using a two-sample t-test. The result was statistically significant as the p value was 0.0482, indicating that the average revision differs between the two periods.
+
+**Question 5: Are revisions larger when the underlying change in CES level is larger?**
+```{r}
+t5 <- ces_clean %>%
+  t_test(
+    response = revision,
+    explanatory = large_change,
+    order = c("large", "small")
+  )
+t5
+```
+
+We conducted a two-sample t-test comparing mean revisions between “large change” months and “normal change” months. The result was not statistically significant as the p value was 0.654.
+
+**Task 5**
+
+**Claim 1: “Jobs numbers were rigged under McEntarfer”**
+```{r}
+library(dplyr)
+library(lubridate)
+library(infer)
+library(ggplot2)
+
+stopifnot(exists("ces_clean"), exists("ces_full"))
+
+# Claim 1: “Jobs numbers were rigged under McEntarfer” — compare revisions during 2023–mid-2025 vs earlier
+
+ces_claim1 <- ces_clean %>%
+  mutate(
+    mc_period = if_else(
+      date >= ymd("2023-01-01") & date <= ymd("2025-06-01"),
+      "McEntarfer",
+      "Other"
+    )
+  )
+
+t_claim1_mean <- ces_claim1 %>%
+  t_test(
+    response = revision,
+    explanatory = mc_period,
+    order = c("McEntarfer", "Other")
+  )
+
+t_claim1_neg <- ces_claim1 %>%
+  prop_test(
+    response = revision_negative,
+    explanatory = mc_period,
+    order = c("McEntarfer", "Other")
+  )
+
+# Print Claim 1 test results
+print("=== Claim 1 (mean revision) ===")
+print(t_claim1_mean)
+
+print("=== Claim 1 (neg revision proportion) ===")
+print(t_claim1_neg)
+```
+After a weak July 2025 jobs report and subsequent downward revisions to May and June's reports, Donald Trump fired Bureau of Labor Statistics (BLS) Commissioner Erika McEntarfer, claiming that the jobs numbers were rigged to make republicans look bad (“Trump Fires BLS Commissioner”). However, as many economists and labor-statistics experts pointed out, revisions are routine.
+
+This claim is a Pants on Fire despite the fact that the two-sample proportion test shows that negative revisions were more frequent during 2023–2025 than in the prior year. However, if we look at Plot 2: Monthly CES Revisions (1979–2025) graph from earlier, we see that negative monthly revisions are common, indicating large swings are not unique to 2023–25.Plot 3: Distribution of CES Revisions shows that most monthly revisions cluster close to zero. While the 2023–25 cluster lies within that tail, the revisions here are not unprecedented.
+
+Additionally, the largest negative revision occurred back in 2020 during COVID, as seen in the table from task 2, and the average month-to-month employment change is 127,000 jobs per month, showing that these revisions and changes are not outliers. This shows that though revisions under McEntarfer were somewhat more negative, they were not abnormal or unprecedented, and consistent with historical fluctuation due to updated survey responses.
+
+**Claim 2: The Bureau of Labor Statistics (BLS) just revised down their jobs numbers from April 2024 to March 2025 by 911,000 jobs — the biggest revision on record and another blunder in the lengthy history of inaccuracies and incompetence at BLS.**
+
+```{r}
+library(dplyr)
+library(lubridate)
+library(infer)
+
+# Define claimed period (latest 12 months)
+ces_claim2 <- ces_clean %>%
+  mutate(in_claim_period = factor(
+    ifelse(date >= ymd("2024-04-01") & date <= ymd("2025-03-01"),
+           "claim_period", "other_period"),
+    levels = c("other_period", "claim_period")
+  ))
+
+# Two-sample t-test: Are claim-period revisions more negative?
+t_claim2 <- ces_claim2 %>%
+  t_test(
+    revision ~ in_claim_period,
+    alternative = "less",      # specifically testing more negative revisions
+    order = c("claim_period", "other_period")
+  )
+
+t_claim2
+```
+
+The Trump administration claimed that the Bureau of Labor Statistics (BLS) just revised down its jobs numbers from April 2024 to March 2025 by 911,000 jobs, the biggest revision on record, and another blunder in the lengthy history of inaccuracies and incompetence at BLS(“BLS Revisions Show President Trump Was Right”). This claim is false as the t-test shows that while revisions during 2024–25 were unusually negative, they were not the largest revision in the record. The largest negative revision occurred back in 2020 during COVID, as seen in the table from task 2. Additionally, the average revision since 1979 is only 15 jobs, meaning CES revisions are typically very small compared to total employment, which grows on average by 127,000 jobs per month.
+
+Visual evidence further contradicts the claim. Plot 2: Monthly CES Revisions Over Time shows that large downward revisions have occurred multiple times in past decades, often with much greater magnitude than the 2024–2025 episode. Likewise, Plot 4: Original vs Final Employment Estimates Over Time shows that the gap between initial and revised figures in 2024–2025 looks similar to earlier years, demonstrating that the recent adjustments do not stand out historically.
+
+In conclusion, while it is true that recent revisions were more negative than the long-term norm, they were nowhere close to being the largest ever recorded. This claim exaggerates normal statistical corrections and falsely portrays them as unprecedented failure.
+
+**Bibliography**
+
+“BLS Revisions Show President Trump Was Right - Again.” The White House, The United States Government, 9 Sept. 2025, www.whitehouse.gov/articles/2025/09/bls-revisions-show-president-trump-was-right-again/. 
+
+Trump Fires BLS Commissioner, Claiming Weak Jobs Numbers Were ‘Rigged’ - the New York Times, www.nytimes.com/2025/08/01/business/economy/trump-bls-firing-jobs-report.html. Accessed 7 Dec. 2025. 
+
