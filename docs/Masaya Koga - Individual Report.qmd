@@ -1,0 +1,262 @@
+---
+title: "Final Individual Report"
+author: "Masaya Koga"
+format:
+  html:
+    theme: cosmo
+    self-contained: true
+---
+
+**Introduction**
+
+Public parks play a key role in supporting the health, happiness, and social well-being of New Yorkers. Access to green space has been shown to reduce stress, improve physical health, strengthen communities, and provide vital places for recreation, especially in dense urban areas like New York City. Because parks are a public resource, they should be available fairly to everyone, regardless of income levels.
+
+However, in many cities, wealthier neighborhoods are thought to have better access to well-maintained parks, while lower-income communities may face limited access to these same benefits. This raises an important equity question: Is park space equitably distributed across neighborhoods with different median household incomes in New York City?
+
+Understanding whether certain communities have fewer opportunities to enjoy parks can help guide better city planning decisions and ensure that investments in public spaces are made fairly and equitably.
+
+**Note Regarding Data Sources**
+
+For this dataset, we do have to note that there is one issue that may arise when running this code on a different computer. For the population and income data, we had to use the U.S. Census American Community Survey API. I tried multiple other ways to get the population and income data, but could not find a way to do this that did not either involve using the api or manually downloading the population and income data and dragging it into the local directory, and using the read CSV function.
+
+To use this api, we had to request the census data API key. We will include the instructions on how to do this below, and on how to install this onto your laptop. The URL to request the census key can be found here - https://api.census.gov/data/key_signup.html, and once you request it, please check your email and insert the census key in the code below. My census key was 4301d71b60a58d3c5f7fcf806c80da77d8c2e8a1, so please change it to the census key you received via email.
+
+```{r}
+library(dplyr)
+library(tidycensus)
+library(readr)
+library(tidyr)
+library(ggplot2)
+library(DT)
+library(tigris)
+library(sf)
+library(scales)
+
+# Set Census API key (run on Console)
+#census_api_key(
+  #"4301d71b60a58d3c5f7fcf806c80da77d8c2e8a1",
+  #install = TRUE,
+  #overwrite = TRUE
+#)
+```
+
+
+**Data Sources Used/How we used the Data Sources**
+```{r}
+# 1. Park Data
+parks <- read.csv("https://data.cityofnewyork.us/api/views/enfh-gkve/rows.csv?accessType=DOWNLOAD")
+
+parks_by_zip <- parks %>%
+  filter(!is.na(ZIPCODE) & ACRES > 0) %>%
+  mutate(zip = sprintf("%05s", ZIPCODE)) %>%
+  group_by(zip) %>%
+  summarise(
+    num_parks   = n(),
+    total_acres = sum(as.numeric(ACRES), na.rm=TRUE),
+    .groups="drop"
+  )
+
+# 2. ACS Pop + Income
+acs_zip_raw <- get_acs(
+  geography = "zcta",
+  variables = c(
+    population    = "B01003_001",
+    median_income = "B19013_001"
+  ),
+  year = 2023,
+  geometry = FALSE
+)
+```
+To explore this question, we combined two major public data sources: New York City Parks Property Data and the U.S. Census American Community Survey (ACS). The New York City Parks Property dataset contains information on all official New York City parks, including their location and size. This allows us to determine the number of parks within each neighborhood. The U.S. Census American Community Survey (ACS) dataset provides neighborhood-level population and income information. This helps us understand how many people live in each ZIP code and how incomes vary across the city. By using these two sources, we can see how park availability, measured as parks per person, differs between lower-income and higher-income neighborhoods.
+```{r}
+acs_zip <- acs_zip_raw %>%
+  filter(GEOID >= "10000" & GEOID <= "11499") %>%  # NYC only
+  select(GEOID, variable, estimate) %>%
+  pivot_wider(names_from = variable, values_from = estimate) %>%
+  rename(zip = GEOID) %>%
+  mutate(
+    population    = as.numeric(population),
+    median_income = as.numeric(median_income)
+  ) %>%
+  filter(
+    population >= 10000,   # Remove ZIPs with <10k residents
+    median_income > 0      # Remove ZIPs with zero income
+  )
+
+
+# 3. Merge + Calculate Metrics
+neighborhood_zip_summary <- acs_zip %>%
+  left_join(parks_by_zip, by="zip") %>%
+  mutate(
+    num_parks        = replace_na(num_parks, 0),
+    total_acres      = replace_na(total_acres, 0),
+    
+    # Key Metric:
+    parks_per_person = num_parks / population,
+    
+    # Format Columns
+    population    = comma(population),
+    median_income = dollar(median_income)
+  ) %>%
+  select(zip, population, median_income,
+         num_parks, total_acres, parks_per_person) %>%
+  arrange(desc(parks_per_person))
+```
+
+We analyzed park access at the ZIP code level rather than using traditional neighborhood boundaries or community districts. The reason for this is that ZIP codes offered the most reliable and consistent way to match the New York City Parks Property dataset with the U.S. Census data on population and income. In contrast, when we attempted to use neighborhood boundaries or community districts, the datasets could not be aligned cleanly, resulting in missing matches and errors in the analysis. Using ZIP codes ensured that the data could be accurately linked across sources and that the results were both comprehensive and reliable.
+
+The major issue we ran into while using zip codes is that not all zip codes are equal. Some zip codes had zero people living in them or with median incomes that were zero. To prevent extremely small or non-residential ZIP codes from skewing the results, we excluded  ZIP codes with fewer than 10,000 residents and ZIP codes with a median income of $0. This filter ensured that our analysis focused on areas that function as neighborhoods where people actually live.
+
+**Analysis**
+**Lowest Access ZIP Codes by Parks Per Person**
+```{r}
+lowest_5 <- neighborhood_zip_summary %>%
+  arrange(parks_per_person) %>%
+  slice(1:5)
+
+datatable(
+  lowest_5,
+  options = list(dom = 't', pageLength = 5),
+  caption = "Bottom 5 ZIP Codes — Lowest Park Access"
+)
+```
+As shown in the table above, the bottom five ZIP codes with the lowest park access all have median household incomes well above the New York City average. In each of these areas, there are zero parks located within the ZIP code boundary, which explains their extremely low access number. This finding suggests that high-income neighborhoods do not necessarily have better park availability and that limited access to parks is not exclusively a challenge faced by lower-income communities.
+
+**Highest Access ZIP Codes by Parks Per Person**
+```{r}
+# Highest 5 ZIP codes by parks_per_person
+highest_5 <- neighborhood_zip_summary %>%
+  arrange(desc(parks_per_person)) %>%
+  slice(1:5)
+
+datatable(
+  highest_5,
+  options = list(dom = 't', pageLength = 5),
+  caption = "Top 5 ZIP Codes — Highest Park Access"
+)
+```
+As shown in the table above, the top five ZIP codes with the highest park access have median household incomes that are both a mix of below and above the New York City average. This shows that high park availability is not concentrated in either wealthy or low-income communities, and that living in an area with more parks per person does not necessarily correlate with having a higher household income. This means that neighborhoods with the greatest park access represent a diverse range of economic conditions, further showing that park distribution in New York City is not strongly tied to income level.
+
+**Quartile Analysis - Parks Per Person**
+```{r}
+plot_data_q <- neighborhood_zip_summary %>%
+  mutate(
+    median_income_num = as.numeric(gsub("[$,]", "", median_income)),
+    Income_Quartile = ntile(median_income_num, 4)
+  )
+
+quartile_parks <- plot_data_q %>%
+  group_by(Income_Quartile) %>%
+  summarise(
+    Avg_Parks_Per_Person = mean(parks_per_person, na.rm = TRUE),
+    Min_Income = min(median_income_num, na.rm = TRUE),
+    Max_Income = max(median_income_num, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  mutate(
+    Income_Bin = paste0(
+      "$", scales::comma(Min_Income),
+      " – $", scales::comma(Max_Income)
+    ),
+    # Order bins by quartile number
+    Income_Bin = factor(Income_Bin, levels = Income_Bin[order(Income_Quartile)])
+  )
+
+ggplot(quartile_parks,
+       aes(x = Income_Bin,
+           y = Avg_Parks_Per_Person,
+           fill = Income_Bin)) +
+  geom_col() +
+  geom_text(
+    aes(label = format(round(Avg_Parks_Per_Person, 6),
+                       scientific = FALSE)),
+    vjust = -0.4, size = 5
+  ) +
+  labs(
+    title = "Parks Per Person by Neighborhood Income Level",
+    x = "Median Household Income Quartile Range",
+    y = "Average Parks Per Person"
+  ) +
+  scale_y_continuous(labels = scales::comma_format(accuracy = 0.000001)) +
+  scale_fill_brewer(type = "qual", palette = "Greens", guide = "none") +
+  theme_minimal(base_size = 12)
+```
+As part of our analysis, we also did a quartile analysis and placed New York City ZIP codes into four income levels, from the lowest-income zip codes to the highest. When examining parks per person across these income ranges, a noticeable pattern emerges: the lowest-income quartile has the greatest number of parks per person, averaging about 0.000245 parks per resident. In comparison, each step up in income is associated with less park availability, and the highest-income quartile has the fewest parks per person at roughly 0.000105. This indicates that, on average, residents in lower-income neighborhoods have better access to a higher quantity of nearby parks.
+
+While this may seem surprising, this shows how New York City’s urban geography and history have shaped public space. Many of the city’s wealthiest zip codes are highly built-up residential or commercial areas with little undeveloped land available for parks within their ZIP code boundaries. Meanwhile, several lower-income ZIP codes have large public parks or multiple smaller green spaces that increase their park-to-population ratio.
+
+In conclusion, the quartile analysis shows us that more household income does not necessarily translate to greater park access. On the contrary, park availability tends to decline as income rises.
+
+**Scatterplot: Income vs Parks Per Person**
+```{r}
+plot_data <- neighborhood_zip_summary %>%
+  mutate(
+    median_income_num = as.numeric(gsub("[$,]", "", median_income))
+  )
+
+# Linear model for R2
+lm_model <- lm(parks_per_person ~ median_income_num, data = plot_data)
+r2_value <- summary(lm_model)$r.squared
+
+ggplot(plot_data,
+       aes(x = median_income_num, y = parks_per_person)) +
+  geom_point(alpha = 0.6, size = 3, color = "blue") +
+  geom_smooth(method = "lm", se = FALSE, color = "red", linewidth = 1.2) +
+  annotate("text",
+           x = Inf, y = Inf,
+           label = paste0("R² = ", round(r2_value, 4)),
+           hjust = 1.1, vjust = 1.5,
+           size = 5, fontface = "bold") +
+  labs(
+    title = "NYC Park Equity: Income vs Parks Per Person",
+    x = "Median Household Income ($)",
+    y = "Parks Per Person"
+  ) +
+  scale_x_continuous(labels = scales::dollar) +
+  scale_y_continuous(labels = scales::comma_format(accuracy = 0.0001)) +
+  theme_minimal(base_size = 14)
+```
+
+The scatterplot above shows the relationship between median household income and the number of parks per person across New York City ZIP codes. Each dot represents a zip code, and the dots are spread sporadically across the graph. Some lower-income ZIP codes have very high park availability, while others do not. Likewise, high-income areas vary as well, indicating that park access can look very different depending on the specific part of the city.
+
+The red trendline in the graph slopes slightly downward, meaning that, on average, as income increases, park access tends to decrease. The R2 value of 0.12 indicates that only about 12% of the variation in park access across New York City ZIP codes can be explained by differences in median household income. This means that there is no strong or reliable linear relationship between wealth and the number of parks available per resident. While the downward slope of the trendline suggests that higher-income areas may tend to have slightly fewer parks per person, the majority of the differences in park access come from other factors that are not directly related to income. This includes factors such as population density, land availability, zoning policies, neighborhood layout, or historical development patterns.
+
+This relatively low R2 value highlights that income alone is a weak predictor of park access in New York City. There are numerous examples in the data where wealthier ZIP codes have decent park availability and where lower-income neighborhoods have less, even though they fall within the overall trend. These exceptions show that park equity in New York City is complex and cannot be judged solely based on how rich a community is. It is also important to note that this data does not take into account the quality of the parks.  
+
+Overall, the scatterplot shows that park availability in New York City is not strongly tied to wealth. Some of the densest and most expensive neighborhoods simply do not have much physical space left for parks, while many lower-income ZIP codes contain larger or more numerous public parks. As a result, the assumption that richer areas always have better park access does not hold true in New York City.
+
+**T-Test Analysis**
+```{r}
+# Create  income column
+t_test_data <- neighborhood_zip_summary %>%
+  mutate(median_income_num = as.numeric(gsub("[$,]", "", median_income)))
+
+# Split into high-income and low-income groups using the median income
+median_income_cutoff <- median(t_test_data$median_income_num, na.rm = TRUE)
+
+t_test_data <- t_test_data %>%
+  mutate(
+    income_group = ifelse(median_income_num >= median_income_cutoff,
+                          "High Income", "Low Income")
+  )
+t_result <- t.test(
+  parks_per_person ~ income_group,
+  data = t_test_data,
+  var.equal = FALSE
+)
+
+t_result
+```
+Lastly, to test whether higher-income neighborhoods have better park access than lower-income ones, we performed a two-sample t-test comparing parks per person between the two income groups. The null hypothesis is that higher-income and lower-income ZIP codes have the same average parks per person. The alternative hypothesis is that higher-income and lower-income ZIP codes have different average parks per person.
+
+The results show that p = 0.00065, meaning we can reject the null hypothesis that income does not affect park access.
+
+However, the direction of that difference is important, as we see from the previous data that higher-income ZIP codes have lower park access on average than lower-income ZIP codes. So while there is a statistically significant relationship, it is the opposite of what many might assume. This statistical test confirms the same pattern visible in the scatterplot and quartile analysis, which is that income does not guarantee better park access, and in New York City, lower-income communities may actually have slightly more park availability on a per-person basis.
+
+**Conclusion**
+
+Based on all the analyses conducted, which include ranking ZIP codes by park access, quartile comparisons, scatterplot modeling, and statistical testing, we found that there is no clear evidence that wealthier neighborhoods in New York City have better access to parks. In fact, across multiple approaches, the opposite pattern appeared. Lower-income ZIP codes tended to have slightly more parks per person than higher-income ZIP codes. This challenges the common assumption that public amenities like parks are concentrated in wealthier communities.
+
+While the findings reveal a statistically significant difference in park availability between income groups, the effect was limited. The low R2 value of 0.12 from the scatterplot shows that income explains only a small share of the difference in park access. Other variables, such as population density, availability of open land, zoning restrictions, and historical land use, likely play a much stronger role. For example, many higher-income ZIP codes are dense, commercial, or already fully built up, leaving little room for green space, while some lower-income ZIP codes have a smaller population and can include large public parks that raise the parks-per-person ratio.
+
+Overall, this project shows that New York City’s distribution of park space is not strongly determined by household income. At least in New York City, park availability is complex and influenced by urban design more than economic status. While park access does not appear to be an equity issue when measured as parks per person, this analysis does not capture differences in park quality, safety, size, amenities, or maintenance, which can vary widely from neighborhood to neighborhood. On this point, it is very likely that parks in lower income areas are of lower quality than higher income neighborhoods, though we will need to conduct a separate analysis fr this. Future efforts to improve park equity should therefore focus not only on the amount of park space, but also on ensuring that park quality is high across all communities.
