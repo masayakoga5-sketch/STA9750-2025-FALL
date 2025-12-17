@@ -3,6 +3,7 @@ title: "Unequal Ground: Mapping Park Access Inequality Across New York City"
 author: "Hymie Israel, Mirae Han, Racheal Anthony, Daniel Ohebshalom, Swarnadeep Roy, and Masaya Koga"
 format:
   html:
+    self-contained: true
     toc: true
     toc-depth: 2
     toc-expand: false
